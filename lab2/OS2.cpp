@@ -6,7 +6,7 @@
 #include <chrono>
 #include <mutex>
 
-std::mutex mtx; // Мьютекс для синхронизации доступа к массиву
+std::mutex mtx; // ГЊГјГѕГІГҐГЄГ± Г¤Г«Гї Г±ГЁГ­ГµГ°Г®Г­ГЁГ§Г Г¶ГЁГЁ Г¤Г®Г±ГІГіГЇГ  ГЄ Г¬Г Г±Г±ГЁГўГі
 std::vector<int> numbers;
 int min_value, max_value;
 double average_value;
@@ -16,10 +16,10 @@ void min_max() {
     min_value = *std::min_element(numbers.begin(), numbers.end());
     max_value = *std::max_element(numbers.begin(), numbers.end());
 
-    std::cout << "Минимальный элемент: " << min_value << std::endl;
-    std::cout << "Максимальный элемент: " << max_value << std::endl;
+    std::cout << "ГЊГЁГ­ГЁГ¬Г Г«ГјГ­Г»Г© ГЅГ«ГҐГ¬ГҐГ­ГІ: " << min_value << std::endl;
+    std::cout << "ГЊГ ГЄГ±ГЁГ¬Г Г«ГјГ­Г»Г© ГЅГ«ГҐГ¬ГҐГ­ГІ: " << max_value << std::endl;
 
-    // Имитация задержки
+    // Г€Г¬ГЁГІГ Г¶ГЁГї Г§Г Г¤ГҐГ°Г¦ГЄГЁ
     for (size_t i = 0; i < numbers.size(); ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(7));
     }
@@ -29,9 +29,9 @@ void average() {
     std::lock_guard<std::mutex> lock(mtx);
     average_value = static_cast<double>(std::accumulate(numbers.begin(), numbers.end(), 0)) / numbers.size();
 
-    std::cout << "Среднее значение: " << average_value << std::endl;
+    std::cout << "Г‘Г°ГҐГ¤Г­ГҐГҐ Г§Г­Г Г·ГҐГ­ГЁГҐ: " << average_value << std::endl;
 
-    // Имитация задержки
+    // Г€Г¬ГЁГІГ Г¶ГЁГї Г§Г Г¤ГҐГ°Г¦ГЄГЁ
     for (size_t i = 0; i < numbers.size(); ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(12));
     }
@@ -39,11 +39,11 @@ void average() {
 
 int main() {
     int size;
-    std::cout << "Введите razmer массива: ";
+    std::cout << "Г‚ГўГҐГ¤ГЁГІГҐ razmer Г¬Г Г±Г±ГЁГўГ : ";
     std::cin >> size;
 
     numbers.resize(size);
-    std::cout << "Введите elementi массива: ";
+    std::cout << "Г‚ГўГҐГ¤ГЁГІГҐ elementi Г¬Г Г±Г±ГЁГўГ : ";
     for (int i = 0; i < size; ++i) {
         std::cin >> numbers[i];
     }
@@ -54,14 +54,14 @@ int main() {
     t1.join();
     t2.join();
 
-    // Заменяем минимальный и максимальный элементы на среднее значение
+    // Г‡Г Г¬ГҐГ­ГїГҐГ¬ Г¬ГЁГ­ГЁГ¬Г Г«ГјГ­Г»Г© ГЁ Г¬Г ГЄГ±ГЁГ¬Г Г«ГјГ­Г»Г© ГЅГ«ГҐГ¬ГҐГ­ГІГ» Г­Г  Г±Г°ГҐГ¤Г­ГҐГҐ Г§Г­Г Г·ГҐГ­ГЁГҐ
     {
         std::lock_guard<std::mutex> lock(mtx);
         std::replace(numbers.begin(), numbers.end(), min_value, static_cast<int>(average_value));
         std::replace(numbers.begin(), numbers.end(), max_value, static_cast<int>(average_value));
     }
 
-    std::cout << "Модифицированный массив: ";
+    std::cout << "ГЊГ®Г¤ГЁГґГЁГ¶ГЁГ°Г®ГўГ Г­Г­Г»Г© Г¬Г Г±Г±ГЁГў: ";
     for (const auto& num : numbers) {
         std::cout << num << " ";
     }
