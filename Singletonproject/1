@@ -1,0 +1,106 @@
+#include <iostream>
+#include <mutex>
+#include <memory>
+
+template <typename T>
+struct CreateUsingNew {
+    static T* Create() {
+        return new T();
+    }
+
+    static void Destroy(T* p) {
+        delete p;
+    }
+};
+
+template <typename T>
+struct DefaultLifetime {
+    static void ScheduleDestruction(T* obj, void(*pFun)()) {
+        std::atexit(pFun);
+    }
+
+    static void OnDeadReference() {
+        throw std::runtime_error("Dead Reference Detected");
+    }
+};
+
+struct NoThreading {
+    struct Lock {
+        Lock() {}
+    };
+};
+
+struct SingleThreaded {
+    struct Lock {
+        Lock() {}
+    };
+};
+
+struct MultiThreaded {
+    struct Lock {
+        Lock() {
+            SingletonMutex().lock();
+        }
+
+        ~Lock() {
+            SingletonMutex().unlock();
+        }
+
+        static std::mutex& SingletonMutex() {
+            static std::mutex mtx;
+            return mtx;
+        }
+    };
+};
+
+template <
+    typename T,
+    template <class> class CreationPolicy = CreateUsingNew,
+    template <class> class LifetimePolicy = DefaultLifetime,
+    class ThreadingModel = MultiThreaded
+>
+class Singleton {
+public:
+    static T& Instance() {
+        if (!pInstance_) {
+            typename ThreadingModel::Lock lock;
+            if (!pInstance_) {
+                if (destroyed_) {
+                    LifetimePolicy<T>::OnDeadReference();
+                    destroyed_ = false;
+                }
+                pInstance_ = CreationPolicy<T>::Create();
+                LifetimePolicy<T>::ScheduleDestruction(pInstance_, DestroySingleton);
+            }
+        }
+        return *pInstance_;
+    }
+
+private:
+    static void DestroySingleton() {
+        CreationPolicy<T>::Destroy(pInstance_);
+        pInstance_ = nullptr;
+        destroyed_ = true;
+    }
+
+    static T* pInstance_;
+    static bool destroyed_;
+};
+
+template <typename T, template <class> class CP, template <class> class LP, class TM>
+T* Singleton<T, CP, LP, TM>::pInstance_ = nullptr;
+
+template <typename T, template <class> class CP, template <class> class LP, class TM>
+bool Singleton<T, CP, LP, TM>::destroyed_ = false;
+
+class Logger {
+public:
+    void Log(const std::string& msg) {
+        std::cout << "Log: " << msg << "\n";
+    }
+};
+
+int main() {
+    using MyLogger = Singleton<Logger>;
+    MyLogger::Instance().Log("Hello from Singleton!");
+}
