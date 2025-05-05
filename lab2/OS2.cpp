@@ -1,71 +1,80 @@
 #include <iostream>
-#include <thread>
+#include <windows.h>
 #include <vector>
 #include <numeric>
 #include <algorithm>
-#include <chrono>
-#include <mutex>
 
-std::mutex mtx; // Ìüþòåêñ äëÿ ñèíõðîíèçàöèè äîñòóïà ê ìàññèâó
-std::vector<int> numbers;
-int min_value, max_value;
-double average_value;
+using namespace std;
 
-void min_max() {
-    std::lock_guard<std::mutex> lock(mtx);
-    min_value = *std::min_element(numbers.begin(), numbers.end());
-    max_value = *std::max_element(numbers.begin(), numbers.end());
+// Глобальные данные для обработки
+vector<int> data_values;
+double calculated_average;
+int found_min;
+int found_max;
+HANDLE min_max_thread_handle;
+HANDLE average_thread_handle;
 
-    std::cout << "Ìèíèìàëüíûé ýëåìåíò: " << min_value << std::endl;
-    std::cout << "Ìàêñèìàëüíûé ýëåìåíò: " << max_value << std::endl;
+// Функция потока для поиска минимального и максимального значений
+DWORD WINAPI FindMinMax(LPVOID param) {
+    found_min = *min_element(data_values.begin(), data_values.end());
+    found_max = *max_element(data_values.begin(), data_values.end());
 
-    // Èìèòàöèÿ çàäåðæêè
-    for (size_t i = 0; i < numbers.size(); ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(7));
-    }
+    // Имитация обработки данных
+    Sleep(7);
+    cout << "Minimum value: " << found_min << ", Maximum value: " << found_max << endl;
+
+    return 0;
 }
 
-void average() {
-    std::lock_guard<std::mutex> lock(mtx);
-    average_value = static_cast<double>(std::accumulate(numbers.begin(), numbers.end(), 0)) / numbers.size();
+// Функция потока для вычисления среднего значения
+DWORD WINAPI CalculateAverage(LPVOID param) {
+    calculated_average = accumulate(data_values.begin(), data_values.end(), 0.0) / data_values.size();
 
-    std::cout << "Ñðåäíåå çíà÷åíèå: " << average_value << std::endl;
+    // Имитация обработки данных
+    Sleep(12);
+    cout << "Average value: " << calculated_average << endl;
 
-    // Èìèòàöèÿ çàäåðæêè
-    for (size_t i = 0; i < numbers.size(); ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(12));
-    }
+    return 0;
 }
 
 int main() {
-    int size;
-    std::cout << "Ââåäèòå razmer ìàññèâà: ";
-    std::cin >> size;
+    int data_size;
 
-    numbers.resize(size);
-    std::cout << "Ââåäèòå elementi ìàññèâà: ";
-    for (int i = 0; i < size; ++i) {
-        std::cin >> numbers[i];
+    // Ввод данных
+    cout << "Enter array size: ";
+    cin >> data_size;
+
+    data_values.resize(data_size);
+    cout << "Enter " << data_size << " integer elements:\n";
+    for (int i = 0; i < data_size; ++i) {
+        cin >> data_values[i];
     }
 
-    std::thread t1(min_max);
-    std::thread t2(average);
+    // Создание и запуск потоков
+    min_max_thread_handle = CreateThread(NULL, 0, FindMinMax, NULL, 0, NULL);
+    average_thread_handle = CreateThread(NULL, 0, CalculateAverage, NULL, 0, NULL);
 
-    t1.join();
-    t2.join();
+    // Ожидание завершения потоков
+    WaitForSingleObject(min_max_thread_handle, INFINITE);
+    WaitForSingleObject(average_thread_handle, INFINITE);
 
-    // Çàìåíÿåì ìèíèìàëüíûé è ìàêñèìàëüíûé ýëåìåíòû íà ñðåäíåå çíà÷åíèå
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        std::replace(numbers.begin(), numbers.end(), min_value, static_cast<int>(average_value));
-        std::replace(numbers.begin(), numbers.end(), max_value, static_cast<int>(average_value));
+    // Модификация массива - замена min/max на среднее значение
+    for (int& value : data_values) {
+        if (value == found_min || value == found_max) {
+            value = static_cast<int>(calculated_average);
+        }
     }
 
-    std::cout << "Ìîäèôèöèðîâàííûé ìàññèâ: ";
-    for (const auto& num : numbers) {
-        std::cout << num << " ";
+    // Вывод результатов
+    cout << "Processed array: ";
+    for (int value : data_values) {
+        cout << value << " ";
     }
-    std::cout << std::endl;
+    cout << endl;
+
+    // Освобождение ресурсов
+    CloseHandle(min_max_thread_handle);
+    CloseHandle(average_thread_handle);
 
     return 0;
 }
