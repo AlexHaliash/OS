@@ -1,0 +1,44 @@
+#include "min_max_avg.h"
+#include <gtest/gtest.h>
+
+// Тест для FindMinMax
+TEST(MinMaxTest, HandlesNormalInput) {
+    std::vector<int> data = {3, 1, 4, 2, 5};
+    int min, max;
+    FindMinMax(data, min, max);
+    EXPECT_EQ(min, 1);
+    EXPECT_EQ(max, 5);
+}
+
+TEST(MinMaxTest, HandlesNegativeNumbers) {
+    std::vector<int> data = {-1, -5, -3};
+    int min, max;
+    FindMinMax(data, min, max);
+    EXPECT_EQ(min, -5);
+    EXPECT_EQ(max, -1);
+}
+
+// Тест для CalculateAverage
+TEST(AverageTest, HandlesIntegerAverage) {
+    std::vector<int> data = {1, 2, 3, 4, 5};
+    double avg = CalculateAverage(data);
+    EXPECT_DOUBLE_EQ(avg, 3.0);
+}
+
+TEST(AverageTest, HandlesEmptyArray) {
+    std::vector<int> data;
+    double avg = CalculateAverage(data);
+    EXPECT_TRUE(std::isnan(avg));  // Проверка на NaN (деление на 0)
+}
+
+// Тест для ReplaceMinMaxWithAverage
+TEST(ReplaceTest, ReplacesMinAndMax) {
+    std::vector<int> data = {3, 1, 4, 2, 5};
+    ReplaceMinMaxWithAverage(data, 1, 5, 3.0);
+    EXPECT_EQ(data, std::vector<int>({3, 3, 4, 2, 3}));
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
