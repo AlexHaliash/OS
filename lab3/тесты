@@ -1,0 +1,111 @@
+TEST(MarkerThreadTests, SingleThreadOperation) {
+    arr_size = 100;
+    arr = new int[arr_size];
+    for (int i = 0; i < arr_size; i++) {
+        arr[i] = 0;
+    }
+    
+    num = 1;
+    InitializeCriticalSection(&cs);
+    HANDLE thread = CreateThread(NULL, 0, marker, (void*)0, 0, NULL);
+    
+    // Let the thread run briefly
+    Sleep(100);
+    
+    // Signal the thread to stop
+    SetEvent(continueEvents[0]);
+    WaitForSingleObject(thread, INFINITE);
+    
+    // Verify at least some elements were marked
+    bool markedFound = false;
+    for (int i = 0; i < arr_size; i++) {
+        if (arr[i] == 1) {
+            markedFound = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(markedFound);
+    
+    DeleteCriticalSection(&cs);
+    delete[] arr;
+    CloseHandle(thread);
+}
+
+...............................................................
+
+TEST(MarkerThreadTests, ThreadTermination) {
+    arr_size = 100;
+    arr = new int[arr_size];
+    for (int i = 0; i < arr_size; i++) {
+        arr[i] = 0;
+    }
+    
+    num = 1;
+    isWorking = new bool[num];
+    isWorking[0] = true;
+    InitializeCriticalSection(&cs);
+    
+    HANDLE thread = CreateThread(NULL, 0, marker, (void*)0, 0, NULL);
+    
+    // Wait for thread to stop itself
+    WaitForSingleObject(stopEvents[0], INFINITE);
+    
+    // Signal thread to terminate
+    isWorking[0] = false;
+    SetEvent(continueEvents[0]);
+    
+    // Wait for thread to finish
+    WaitForSingleObject(thread, INFINITE);
+    
+    // Verify all marked elements were cleared
+    for (int i = 0; i < arr_size; i++) {
+        EXPECT_EQ(arr[i], 0);
+    }
+    
+    DeleteCriticalSection(&cs);
+    delete[] arr;
+    delete[] isWorking;
+    CloseHandle(thread);
+}
+
+.........................................................................
+
+TEST(ConcurrencyTests, CriticalSectionProtection) {
+    arr_size = 1000;
+    arr = new int[arr_size];
+    for (int i = 0; i < arr_size; i++) {
+        arr[i] = 0;
+    }
+    
+    num = 5;
+    InitializeCriticalSection(&cs);
+    isWorking = new bool[num];
+    HANDLE* threads = new HANDLE[num];
+    
+    for (int i = 0; i < num; i++) {
+        isWorking[i] = true;
+        threads[i] = CreateThread(NULL, 0, marker, (void*)i, 0, NULL);
+    }
+    
+    // Let threads run for a while
+    Sleep(1000);
+    
+    // Check for array corruption (no values other than 0-5)
+    for (int i = 0; i < arr_size; i++) {
+        EXPECT_GE(arr[i], 0);
+        EXPECT_LE(arr[i], num);
+    }
+    
+    // Clean up
+    for (int i = 0; i < num; i++) {
+        isWorking[i] = false;
+        SetEvent(continueEvents[i]);
+    }
+    
+    WaitForMultipleObjects(num, threads, TRUE, INFINITE);
+    
+    DeleteCriticalSection(&cs);
+    delete[] arr;
+    delete[] isWorking;
+    delete[] threads;
+}
