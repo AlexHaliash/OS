@@ -1,0 +1,28 @@
+#include <gtest/gtest.h>
+#include "Main.cpp" 
+
+TEST(MarkerTest, ArrayInitialization) {
+    arrSize = 10;
+    common_array = std::make_unique<int[]>(arrSize);
+    for (size_t i = 0; i < arrSize; ++i) {
+        EXPECT_EQ(common_array[i], 0);
+    }
+}
+
+TEST(MarkerTest, ThreadTermination) {
+    arrSize = 5;
+    threadsAmnt = 2;
+    common_array = std::make_unique<int[]>(arrSize);
+
+    // Эмуляция работы потоков
+    terminateEventsArr[0] = TRUE;
+    SetEvent(hContinueEvent);
+
+    // Проверка, что поток завершился
+    EXPECT_EQ(WaitForSingleObject(stopEventsArr[0], WAIT_OBJECT_0);
+}
+
+TEST(MarkerTest, InvalidInput) {
+    arrSize = 0;
+    EXPECT_EXIT(Marker(nullptr), ::testing::ExitedWithCode(EXIT_FAILURE), "");
+}
